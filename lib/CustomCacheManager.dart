@@ -1,35 +1,50 @@
-import 'dart:io';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_cache_manager/src/storage/file_system/file_system.dart'
+    as c;
 
-class CustomCacheManager extends BaseCacheManager {
-  static const key = "customCache";
+class IOFileSystem implements c.FileSystem {
+  final Future<Directory> _fileDir;
 
-  static CustomCacheManager _instance;
+  IOFileSystem(String key) : _fileDir = createDirectory(key);
 
-  factory CustomCacheManager() {
-    if (_instance == null) {
-      _instance = CustomCacheManager._();
-    }
-    return _instance;
+  static Future<Directory> createDirectory(String key) async {
+    var baseDir = await getTemporaryDirectory();
+    var path = p.join(baseDir.path, key);
+    var fs = const LocalFileSystem();
+    var directory = fs.directory((path));
+    await directory.create(recursive: true);
+    return directory;
   }
 
-  CustomCacheManager._()
-      : super(key,
-      maxAgeCacheObject: Duration(days: 30), maxNrOfCacheObjects: 20000);
-
-  getFilePath() async {
-    var directory = await getTemporaryDirectory();
-    return p.join(directory.path, key);
+  @override
+  Future<File> createFile(String name) async {
+    assert(name != null);
+    return (await _fileDir).childFile(name);
   }
+}
+
+class CustomCacheManager {
+  static const key = 'customCacheKey';
+  static CacheManager instance = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 7),
+      maxNrOfCacheObjects: 20,
+      repo: JsonCacheInfoRepository(databaseName: key),
+      fileSystem: IOFileSystem(key),
+      fileService: HttpFileService(),
+    ),
+  );
 
   getSize() async {
     try {
-      final path = await getFilePath();
-      // print(path);
-      final directory = Directory(path);
+      final directory = await IOFileSystem.createDirectory(CustomCacheManager.key);
+
       final listStream = directory.list();
       final list = <FileSystemEntity>[];
       await for (FileSystemEntity fileSystemEntity in listStream) {
@@ -38,13 +53,58 @@ class CustomCacheManager extends BaseCacheManager {
       final stats = await Future.wait(
           list.map((fileSystemEntity) => fileSystemEntity.stat()));
       final fileStats =
-      stats.where((stat) => stat.type == FileSystemEntityType.file);
+          stats.where((stat) => stat.type == FileSystemEntityType.file);
       final sizes = fileStats.map((stat) => stat.size);
       final size = sizes.isEmpty ? 0 : sizes.reduce((v, e) => v + e);
       // print(size);
       return size;
-    } catch (e){
+    } catch (e) {
       return 0;
     }
   }
 }
+
+// class CustomCacheManager1 extends BaseCacheManager {
+//   static const key = "customCache";
+//
+//   static CustomCacheManager _instance;
+//
+//   factory CustomCacheManager() {
+//     if (_instance == null) {
+//       _instance = CustomCacheManager._();
+//     }
+//     return _instance;
+//   }
+//
+//   // CustomCacheManager._()
+//   //     : super(key,
+//   //     maxAgeCacheObject: Duration(days: 30), maxNrOfCacheObjects: 20000);
+//
+//   getFilePath() async {
+//     var directory = await getTemporaryDirectory();
+//     return p.join(directory.path, key);
+//   }
+//
+//   getSize() async {
+//     try {
+//       final path = await getFilePath();
+//       // print(path);
+//       final directory = Directory(path);
+//       final listStream = directory.list();
+//       final list = <FileSystemEntity>[];
+//       await for (FileSystemEntity fileSystemEntity in listStream) {
+//         list.add(fileSystemEntity);
+//       }
+//       final stats = await Future.wait(
+//           list.map((fileSystemEntity) => fileSystemEntity.stat()));
+//       final fileStats =
+//       stats.where((stat) => stat.type == FileSystemEntityType.file);
+//       final sizes = fileStats.map((stat) => stat.size);
+//       final size = sizes.isEmpty ? 0 : sizes.reduce((v, e) => v + e);
+//       // print(size);
+//       return size;
+//     } catch (e){
+//       return 0;
+//     }
+//   }
+// }

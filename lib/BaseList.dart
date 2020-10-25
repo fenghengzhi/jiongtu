@@ -83,7 +83,7 @@ class _Item extends StatelessWidget {
         CachedNetworkImage(
           fit: BoxFit.fitWidth,
           imageUrl: resource.coverUrl,
-          cacheManager: CustomCacheManager(),
+          cacheManager: CustomCacheManager.instance,
           placeholder: (context, url) => CircularProgressIndicator(),
           errorWidget: (context, url, error) => Icon(Icons.error),
         ),

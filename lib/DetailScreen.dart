@@ -75,7 +75,7 @@ class _Item extends StatelessWidget {
                       ? (picInfo.width / picInfo.height)
                       : 1,
                   child: Icon(Icons.error)),
-              cacheManager: CustomCacheManager(),
+              cacheManager: CustomCacheManager.instance,
               fit: BoxFit.fitWidth,
               width: double.infinity,
               imageUrl: picInfo.pic_url),

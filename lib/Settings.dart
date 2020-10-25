@@ -60,7 +60,8 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
   }
 
   _clearCache() async {
-    await CustomCacheManager().emptyCache();
+    await CustomCacheManager.instance.emptyCache();
+    // await CustomCacheManager().emptyCache();
     await _getCacheSize();
   }
 

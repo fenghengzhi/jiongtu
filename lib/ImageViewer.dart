@@ -51,7 +51,7 @@ class _ViewerState extends State<_Viewer> {
       width = _picInfo.width.toDouble();
       height = _picInfo.height.toDouble();
     } else {
-      CustomCacheManager().getSingleFile(_picInfo.pic_url).then((file) {
+      CustomCacheManager.instance.getSingleFile(_picInfo.pic_url).then((file) {
         final image = Image.file(file);
 
         image.image
@@ -95,7 +95,7 @@ class _ViewerState extends State<_Viewer> {
                         child: CachedNetworkImage(
                             key: _key,
                             fit: BoxFit.fitWidth,
-                            cacheManager: CustomCacheManager(),
+                            cacheManager: CustomCacheManager.instance,
                             errorWidget: (context, url, error) =>
                                 Icon(Icons.error),
 //                            width: double.infinity,
@@ -158,7 +158,7 @@ class _ViewerState extends State<_Viewer> {
   }
 
   _saveToGallery(LongPressStartDetails details) async {
-    final file = await CustomCacheManager().getSingleFile(_picInfo.pic_url);
+    final file = await CustomCacheManager.instance.getSingleFile(_picInfo.pic_url);
 //    final result = await ImageGallerySaver.save(file.readAsBytesSync());
     await Share.file('分享图片', 'esys.png', file.readAsBytesSync(), 'image/*');
 //    print(result);
