@@ -12,16 +12,12 @@ class _BaseListState extends State<BaseList>
   @override
   bool get wantKeepAlive => true;
   List<Resource> _resources = [];
-  final Future<List<Resource>> Function() getListData;
-  final Future<List<PicInfo>> Function(Resource) getItemData;
-
-  _BaseListState({@required this.getListData, @required this.getItemData});
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return RefreshIndicator(
-        onRefresh: getListData,
+        onRefresh: widget.getListData,
         child: Scrollbar(
             child: StaggeredGridView.countBuilder(
           physics: BouncingScrollPhysics(),
@@ -29,8 +25,8 @@ class _BaseListState extends State<BaseList>
           itemCount: _resources.length,
 //        mainAxisSpacing: 4.0,
           crossAxisSpacing: 0,
-          itemBuilder: (BuildContext context, int index) =>
-              _Item(resource: _resources[index], getItemData: getItemData),
+          itemBuilder: (BuildContext context, int index) => _Item(
+              resource: _resources[index], getItemData: widget.getItemData),
           staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
         )));
   }
@@ -38,7 +34,7 @@ class _BaseListState extends State<BaseList>
   @override
   void initState() {
     super.initState();
-    getListData().then((resources) {
+    widget.getListData().then((resources) {
       setState(() {
         _resources = resources;
       });
@@ -48,8 +44,7 @@ class _BaseListState extends State<BaseList>
 
 abstract class BaseList extends StatefulWidget {
   @override
-  _BaseListState createState() =>
-      _BaseListState(getListData: getListData, getItemData: getItemData);
+  _BaseListState createState() => _BaseListState();
 
   // 获取囧图列表
   // @override

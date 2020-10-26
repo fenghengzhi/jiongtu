@@ -6,9 +6,6 @@ import 'package:video_player/video_player.dart' as vp;
 import 'PicInfo.dart';
 
 class _VideoPlayerState extends State<VideoPlayer> {
-  final PicInfo _picInfo;
-
-  _VideoPlayerState(this._picInfo);
 
   vp.VideoPlayerController _controller;
 //  bool _isPlaying = false;
@@ -28,7 +25,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   @override
   void initState() {
     super.initState();
-    final videoUrl = _picInfo.video_url;
+    final videoUrl = widget._picInfo.video_url;
     // print(_picInfo);
 
     // print(videoUrl);
@@ -97,5 +94,5 @@ class VideoPlayer extends StatefulWidget {
   VideoPlayer(this._picInfo);
 
   @override
-  _VideoPlayerState createState() => _VideoPlayerState(_picInfo);
+  _VideoPlayerState createState() => _VideoPlayerState();
 }

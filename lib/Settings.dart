@@ -13,8 +13,6 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
   final _subscriptions = <StreamSubscription>[];
   int _size = 0;
 
-  _Settings();
-
   @override
   Widget build(BuildContext context) => Scrollbar(
           child: ListView(

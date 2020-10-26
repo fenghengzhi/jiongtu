@@ -9,17 +9,12 @@ import 'PicInfo.dart';
 import 'VideoPlayer.dart';
 
 class _DetailScreen extends State<DetailScreen> {
-  final Resource resource;
-  final Future<List<PicInfo>> Function(Resource) getItemData;
-
-  _DetailScreen({@required this.resource, @required this.getItemData});
-
   List<PicInfo> _picInfos = [];
 
   @override
   Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
-        title: Text(resource.title),
+        title: Text(widget.resource.title),
       ),
       body: Scrollbar(
           child: ListView.builder(
@@ -30,7 +25,7 @@ class _DetailScreen extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
-    getItemData(resource).then((picInfos) {
+    widget.getItemData(widget.resource).then((picInfos) {
       setState(() {
         _picInfos = picInfos;
       });
@@ -92,6 +87,5 @@ class DetailScreen extends StatefulWidget {
   DetailScreen({@required this.resource, @required this.getItemData});
 
   @override
-  _DetailScreen createState() =>
-      _DetailScreen(resource: resource, getItemData: getItemData);
+  _DetailScreen createState() => _DetailScreen();
 }

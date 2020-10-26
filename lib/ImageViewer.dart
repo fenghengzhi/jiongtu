@@ -22,9 +22,6 @@ class ImageViewer extends StatelessWidget {
 }
 
 class _ViewerState extends State<_Viewer> {
-  final PicInfo _picInfo;
-
-  _ViewerState(this._picInfo);
 
   double _scale = 1.0;
   double _startScale = 1.0;
@@ -44,6 +41,7 @@ class _ViewerState extends State<_Viewer> {
   void initState() {
     super.initState();
     // debugger();
+    final _picInfo = widget._picInfo;
     if (_picInfo.width != null &&
         _picInfo.width > 0 &&
         _picInfo.height != null &&
@@ -100,7 +98,7 @@ class _ViewerState extends State<_Viewer> {
                                 Icon(Icons.error),
 //                            width: double.infinity,
 //                            height: double.infinity,
-                            imageUrl: _picInfo.pic_url))))));
+                            imageUrl: widget._picInfo.pic_url))))));
 //                            imageUrl:
 //                                'https://via.placeholder.com/100x100'))))));
   }
@@ -158,7 +156,7 @@ class _ViewerState extends State<_Viewer> {
   }
 
   _saveToGallery(LongPressStartDetails details) async {
-    final file = await CustomCacheManager.instance.getSingleFile(_picInfo.pic_url);
+    final file = await CustomCacheManager.instance.getSingleFile(widget._picInfo.pic_url);
 //    final result = await ImageGallerySaver.save(file.readAsBytesSync());
     await Share.file('分享图片', 'esys.png', file.readAsBytesSync(), 'image/*');
 //    print(result);
@@ -174,5 +172,5 @@ class _Viewer extends StatefulWidget {
   _Viewer(this._picInfo);
 
   @override
-  _ViewerState createState() => _ViewerState(_picInfo);
+  _ViewerState createState() => _ViewerState();
 }
