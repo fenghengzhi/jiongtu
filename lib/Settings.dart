@@ -18,20 +18,20 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
           child: ListView(
         children: <Widget>[
           ListTile(
-            title: Text('清除缓存'),
+            title: const Text('清除缓存'),
             subtitle: Text('${(_size / 1024 / 1024).toStringAsFixed(2)}mb'),
-            trailing: Icon(Icons.chevron_right),
+            trailing: const Icon(Icons.chevron_right),
             onTap: _showDialog,
           ),
-          Divider(),
+          const Divider(),
           ListTile(
-            title: Text('暗黑模式'),
+            title: const Text('暗黑模式'),
             trailing: Observer(
                 builder: (_) => Switch(
                     value: MyApp.store.darkTheme,
                     onChanged: MyApp.store.setTheme)),
           ),
-          Divider()
+          const Divider()
         ],
       ));
 
@@ -67,16 +67,16 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
     showDialog(
         context: context,
         builder: (BuildContext dialogContext) => AlertDialog(
-              title: new Text("确认清除缓存吗？"),
+              title: const Text("确认清除缓存吗？"),
 //          content: new Text("Alert Dialog body"),
               actions: <Widget>[
                 // usually buttons at the bottom of the dialog
                 FlatButton(
-                  child: new Text("取消"),
+                  child: const Text("取消"),
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
                 FlatButton(
-                    child: new Text("确认"),
+                    child: const Text("确认"),
                     onPressed: () async {
                       await _clearCache();
                       Navigator.of(dialogContext).pop();

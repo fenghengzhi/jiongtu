@@ -18,7 +18,7 @@ class _DetailScreen extends State<DetailScreen> {
       ),
       body: Scrollbar(
           child: ListView.builder(
-              physics: BouncingScrollPhysics(),
+              physics: const BouncingScrollPhysics(),
               itemCount: _picInfos.length,
               itemBuilder: (context, i) => _Item(_picInfos[i]))));
 
@@ -69,7 +69,7 @@ class _Item extends StatelessWidget {
                   aspectRatio: (picInfo.width != null && picInfo.height != null)
                       ? (picInfo.width / picInfo.height)
                       : 1,
-                  child: Icon(Icons.error)),
+                  child: const Icon(Icons.error)),
               cacheManager: CustomCacheManager.instance,
               fit: BoxFit.fitWidth,
               width: double.infinity,

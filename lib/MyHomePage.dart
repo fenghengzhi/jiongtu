@@ -15,7 +15,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage>
     with SingleTickerProviderStateMixin {
-  var _controller = PageController(
+  final _controller = PageController(
     initialPage: 0,
   );
 
@@ -42,13 +42,13 @@ class _MyHomePageState extends State<MyHomePage>
       body: PageView(
         controller: _controller,
         children: _widgetOptions,
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.fiber_new), label: '游侠囧图'),
-          BottomNavigationBarItem(icon: Icon(Icons.fiber_new), label: '游民星空'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '设置'),
+          BottomNavigationBarItem(icon: const Icon(Icons.fiber_new), label: '游侠囧图'),
+          BottomNavigationBarItem(icon: const Icon(Icons.fiber_new), label: '游民星空'),
+          BottomNavigationBarItem(icon: const Icon(Icons.settings), label: '设置'),
         ],
         currentIndex: _selectedIndex,
         fixedColor: Colors.deepPurple,

@@ -32,7 +32,7 @@ class _ViewerState extends State<_Viewer> {
 
   Offset _startFocal = Offset.zero;
 
-  Offset _origin = Offset(0, 0);
+  Offset _origin = const Offset(0, 0);
   GlobalKey _key = GlobalKey();
   double width = 1.0;
   double height = 1.0;
@@ -53,7 +53,7 @@ class _ViewerState extends State<_Viewer> {
         final image = Image.file(file);
 
         image.image
-            .resolve(new ImageConfiguration())
+            .resolve(const ImageConfiguration())
             .addListener(new ImageStreamListener((ImageInfo info, bool _) {
           setState(() {
             width = info.image.width.toDouble();
@@ -161,7 +161,7 @@ class _ViewerState extends State<_Viewer> {
     await Share.file('分享图片', 'esys.png', file.readAsBytesSync(), 'image/*');
 //    print(result);
     Scaffold.of(context).showSnackBar(SnackBar(
-      content: Text("分享"),
+      content: const Text("分享"),
     ));
   }
 }

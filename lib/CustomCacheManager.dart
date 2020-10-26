@@ -12,10 +12,10 @@ class IOFileSystem implements c.FileSystem {
   IOFileSystem(String key) : _fileDir = createDirectory(key);
 
   static Future<Directory> createDirectory(String key) async {
-    var baseDir = await getTemporaryDirectory();
-    var path = p.join(baseDir.path, key);
-    var fs = const LocalFileSystem();
-    var directory = fs.directory((path));
+    final baseDir = await getTemporaryDirectory();
+    final path = p.join(baseDir.path, key);
+    final fs = const LocalFileSystem();
+    final directory = fs.directory((path));
     await directory.create(recursive: true);
     return directory;
   }
