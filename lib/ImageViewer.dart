@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:esys_flutter_share/esys_flutter_share.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +20,6 @@ class ImageViewer extends StatelessWidget {
 }
 
 class _ViewerState extends State<_Viewer> {
-
   double _scale = 1.0;
   double _startScale = 1.0;
   double _offsetX = 0.0;
@@ -71,34 +68,30 @@ class _ViewerState extends State<_Viewer> {
   Widget build(BuildContext context) {
     return Container(
         color: Colors.black,
-        child: Center(
-            child: OverflowBox(
-                maxWidth: double.infinity,
-                maxHeight: double.infinity,
-                child: Container(
-//                        width: picInfo.file_width.toDouble() * _scale,
-//                        height: picInfo.file_height.toDouble() * _scale,
-                    width: width * _scale,
-                    height: height * _scale,
-                    transform: Matrix4.identity()
-                      ..translate(
-                          _offsetX + (width / 2 - _origin.dx) * (_scale - 1.0),
-                          _offsetY +
-                              (height / 2 - _origin.dy) * (_scale - 1.0)),
-                    child: GestureDetector(
-                        onDoubleTap: _doubleTapHandler,
-                        onScaleUpdate: scaleUpdateHandler,
-                        onScaleStart: _scaleStartHandler,
-                        onLongPressStart: _saveToGallery,
-                        child: CachedNetworkImage(
-                            key: _key,
-                            fit: BoxFit.fitWidth,
-                            cacheManager: CustomCacheManager.instance,
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.error),
+        child: OverflowBox(
+            maxWidth: double.infinity,
+            maxHeight: double.infinity,
+            alignment: Alignment.center,
+            child: Container(
+                width: width,
+                height: height,
+                transform: Matrix4.identity()
+                  ..translate((1 - _scale) * _origin.dx + _offsetX,
+                      (1 - _scale) * _origin.dy + _offsetY)
+                  ..scale(_scale),
+                child: GestureDetector(
+                    onDoubleTap: _doubleTapHandler,
+                    onScaleUpdate: scaleUpdateHandler,
+                    onScaleStart: _scaleStartHandler,
+                    onLongPressStart: _saveToGallery,
+                    child: CachedNetworkImage(
+                        key: _key,
+                        fit: BoxFit.fitWidth,
+                        cacheManager: CustomCacheManager.instance,
+                        errorWidget: (context, url, error) => Icon(Icons.error),
 //                            width: double.infinity,
 //                            height: double.infinity,
-                            imageUrl: widget._picInfo.pic_url))))));
+                        imageUrl: widget._picInfo.pic_url)))));
 //                            imageUrl:
 //                                'https://via.placeholder.com/100x100'))))));
   }
@@ -156,7 +149,8 @@ class _ViewerState extends State<_Viewer> {
   }
 
   _saveToGallery(LongPressStartDetails details) async {
-    final file = await CustomCacheManager.instance.getSingleFile(widget._picInfo.pic_url);
+    final file = await CustomCacheManager.instance
+        .getSingleFile(widget._picInfo.pic_url);
 //    final result = await ImageGallerySaver.save(file.readAsBytesSync());
     await Share.file('分享图片', 'esys.png', file.readAsBytesSync(), 'image/*');
 //    print(result);
