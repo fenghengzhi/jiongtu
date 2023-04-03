@@ -1,4 +1,4 @@
-package com.example.jiongtu.jiongtu
+package com.example.jiongtu
 
 import io.flutter.embedding.android.FlutterActivity
 
