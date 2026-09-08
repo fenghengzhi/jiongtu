@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 // import 'package:esys_flutter_share/esys_flutter_share.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 // import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 // import 'package:url_launcher/url_launcher.dart' as url_launcher;
@@ -54,15 +53,17 @@ class _ViewerState extends State<_Viewer> {
 
         image.image
             .resolve(const ImageConfiguration())
-            .addListener(new ImageStreamListener((ImageInfo info, bool _) {
-          setState(() {
-            width = info.image.width.toDouble();
-            height = info.image.height.toDouble();
-          });
-          // m.width = info.image.width;
-          // m.height = info.image.height;
-          // this.sendMsg(m);
-        }));
+            .addListener(
+              new ImageStreamListener((ImageInfo info, bool _) {
+                setState(() {
+                  width = info.image.width.toDouble();
+                  height = info.image.height.toDouble();
+                });
+                // m.width = info.image.width;
+                // m.height = info.image.height;
+                // this.sendMsg(m);
+              }),
+            );
       });
     }
   }
@@ -70,33 +71,42 @@ class _ViewerState extends State<_Viewer> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        color: Colors.black,
-        child: OverflowBox(
-            maxWidth: double.infinity,
-            maxHeight: double.infinity,
-            alignment: Alignment.center,
-            child: Container(
-                width: width,
-                height: height,
-                transform: Matrix4.identity()
-                  ..translate((1 - _scale) * _origin.dx + _offsetX,
-                      (1 - _scale) * _origin.dy + _offsetY)
-                  ..scale(_scale),
-                child: GestureDetector(
-                    // onDoubleTap: _doubleTapHandler,
-                    onScaleUpdate: scaleUpdateHandler,
-                    onScaleStart: _scaleStartHandler,
-                    onLongPressStart: _saveToGallery,
-                    child: CachedNetworkImage(
-                        key: _key,
-                        fit: BoxFit.fitWidth,
-                        cacheManager: CustomCacheManager.instance,
-                        errorWidget: (context, url, error) => Icon(Icons.error),
-//                            width: double.infinity,
-//                            height: double.infinity,
-                        imageUrl: widget._picInfo.pic_url)))));
-//                            imageUrl:
-//                                'https://via.placeholder.com/100x100'))))));
+      color: Colors.black,
+      child: OverflowBox(
+        maxWidth: double.infinity,
+        maxHeight: double.infinity,
+        alignment: Alignment.center,
+        child: Container(
+          width: width,
+          height: height,
+          transform: Matrix4.identity()
+            ..translateByDouble(
+              (1 - _scale) * _origin.dx + _offsetX,
+              (1 - _scale) * _origin.dy + _offsetY,
+              0,
+              1,
+            )
+            ..scaleByDouble(_scale, _scale, _scale, 1),
+          child: GestureDetector(
+            // onDoubleTap: _doubleTapHandler,
+            onScaleUpdate: scaleUpdateHandler,
+            onScaleStart: _scaleStartHandler,
+            onLongPressStart: _saveToGallery,
+            child: CachedNetworkImage(
+              key: _key,
+              fit: BoxFit.fitWidth,
+              cacheManager: CustomCacheManager.instance,
+              errorWidget: (context, url, error) => Icon(Icons.error),
+              //                            width: double.infinity,
+              //                            height: double.infinity,
+              imageUrl: widget._picInfo.pic_url,
+            ),
+          ),
+        ),
+      ),
+    );
+    //                            imageUrl:
+    //                                'https://via.placeholder.com/100x100'))))));
   }
 
   // _doubleTapHandler() {
@@ -112,7 +122,7 @@ class _ViewerState extends State<_Viewer> {
       final leftTop = renderBox.localToGlobal(Offset.zero);
       final origin =
           (details.focalPoint - leftTop) / _scale; //点击的像素距图片左上角坐标（换算成scale=1下）
-//    print(origin);
+      //    print(origin);
       _offsetX = _offsetX + (origin.dx - _origin.dx) * (_scale - 1.0);
 
       _offsetY = _offsetY + (origin.dy - _origin.dy) * (_scale - 1.0);
@@ -155,10 +165,11 @@ class _ViewerState extends State<_Viewer> {
   // }
 
   _saveToGallery(LongPressStartDetails details) async {
-    final file = await CustomCacheManager.instance
-        .getSingleFile(widget._picInfo.pic_url);
-//    final result = await ImageGallerySaver.save(file.readAsBytesSync());
-    Share.shareXFiles([XFile(file.path)]);
+    final file = await CustomCacheManager.instance.getSingleFile(
+      widget._picInfo.pic_url,
+    );
+    //    final result = await ImageGallerySaver.save(file.readAsBytesSync());
+    await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
   }
 }
 

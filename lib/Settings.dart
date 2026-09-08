@@ -14,8 +14,10 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
   int _size = 0;
 
   @override
-  Widget build(BuildContext context) => Scrollbar(
-          child: ListView(
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Scrollbar(
+      child: ListView(
         children: <Widget>[
           ListTile(
             title: const Text('清除缓存'),
@@ -27,21 +29,27 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
           ListTile(
             title: const Text('暗黑模式'),
             trailing: Observer(
-                builder: (_) => Switch(
-                    value: MyApp.store.darkTheme,
-                    onChanged: MyApp.store.setTheme)),
+              builder: (_) => Switch(
+                value: MyApp.store.darkTheme,
+                onChanged: MyApp.store.setTheme,
+              ),
+            ),
           ),
-          const Divider()
+          const Divider(),
         ],
-      ));
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _getCacheSize();
-    _subscriptions.add(MyHomePage.bottomNavigationEvent.stream
-        .where((index) => index == 2)
-        .listen((_) => _getCacheSize()));
+    _subscriptions.add(
+      MyHomePage.bottomNavigationEvent.stream
+          .where((index) => index == 2)
+          .listen((_) => _getCacheSize()),
+    );
   }
 
   @override
@@ -52,6 +60,7 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
 
   _getCacheSize() async {
     final size = await CustomCacheManager().getSize();
+    if (!mounted) return;
     setState(() {
       _size = size;
     });
@@ -65,24 +74,28 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
 
   _showDialog() {
     showDialog(
-        context: context,
-        builder: (BuildContext dialogContext) => AlertDialog(
-              title: const Text("确认清除缓存吗？"),
-//          content: new Text("Alert Dialog body"),
-              actions: <Widget>[
-                // usually buttons at the bottom of the dialog
-                TextButton(
-                  child: const Text("取消"),
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-                TextButton(
-                    child: const Text("确认"),
-                    onPressed: () async {
-                      await _clearCache();
-                      Navigator.of(dialogContext).pop();
-                    }),
-              ],
-            ));
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text("确认清除缓存吗？"),
+        //          content: new Text("Alert Dialog body"),
+        actions: <Widget>[
+          // usually buttons at the bottom of the dialog
+          TextButton(
+            child: const Text("取消"),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+          TextButton(
+            child: const Text("确认"),
+            onPressed: () async {
+              await _clearCache();
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -9,7 +9,7 @@ import 'PicInfo.dart';
 class _VideoPlayerState extends State<VideoPlayer> {
   late vp.VideoPlayerController _controller;
 
-//  bool _isPlaying = false;
+  //  bool _isPlaying = false;
 
   @override
   void deactivate() {
@@ -31,28 +31,31 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
     // print(videoUrl);
 
-    _controller = vp.VideoPlayerController.network(videoUrl ?? '')
+    _controller = vp.VideoPlayerController.networkUrl(Uri.parse(videoUrl ?? ''))
       ..setLooping(true)
       ..initialize().then((_) {
         // Ensure the first frame is shown after the video is initialized, even before the play button has been pressed.
         // _controller.play();
-        setState(() {});
+        if (mounted) setState(() {});
       });
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(),
-      body: Center(
-          child: _controller.value.isInitialized
-              ? GestureDetector(
-                  onTap: _tapHandler,
-                  // onDoubleTap: _doubleTapHandler,
-                  child: AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: vp.VideoPlayer(_controller),
-                  ))
-              : Container()));
+    appBar: AppBar(),
+    body: Center(
+      child: _controller.value.isInitialized
+          ? GestureDetector(
+              onTap: _tapHandler,
+              // onDoubleTap: _doubleTapHandler,
+              child: AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: vp.VideoPlayer(_controller),
+              ),
+            )
+          : Container(),
+    ),
+  );
 
   _tapHandler() {
     if (_controller.value.isPlaying) {
@@ -62,31 +65,31 @@ class _VideoPlayerState extends State<VideoPlayer> {
     }
   }
 
-// _doubleTapHandler() {
-// FocusScope.of(context).requestFocus(FocusNode());
-// _openInWebview(
-//     'http://www.duowan.com/mComment/index.html?domain=tu.duowan.com&uniqid=${_picInfo.cmt_md5}&url=/');
-// }
+  // _doubleTapHandler() {
+  // FocusScope.of(context).requestFocus(FocusNode());
+  // _openInWebview(
+  //     'http://www.duowan.com/mComment/index.html?domain=tu.duowan.com&uniqid=${_picInfo.cmt_md5}&url=/');
+  // }
 
-// _openInWebview(String url) async {
-//   if (await url_launcher.canLaunch(url)) {
-//     // print(url);
-//     Navigator.push(
-//         context,
-//         MaterialPageRoute(
-//             builder: (ctx) => WebviewScaffold(
-//                   initialChild: Center(child: CircularProgressIndicator()),
-//                   url: url,
-//                   appBar: AppBar(title: Text(url)),
-//                 )));
-//   } else {
-//     Scaffold.of(context).showSnackBar(
-//       SnackBar(
-//         content: Text('URL $url can not be launched.'),
-//       ),
-//     );
-//   }
-// }
+  // _openInWebview(String url) async {
+  //   if (await url_launcher.canLaunch(url)) {
+  //     // print(url);
+  //     Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //             builder: (ctx) => WebviewScaffold(
+  //                   initialChild: Center(child: CircularProgressIndicator()),
+  //                   url: url,
+  //                   appBar: AppBar(title: Text(url)),
+  //                 )));
+  //   } else {
+  //     Scaffold.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('URL $url can not be launched.'),
+  //       ),
+  //     );
+  //   }
+  // }
 }
 
 class VideoPlayer extends StatefulWidget {

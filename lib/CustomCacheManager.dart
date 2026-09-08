@@ -1,8 +1,7 @@
 import 'package:file/file.dart';
 import 'package:file/local.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:flutter_cache_manager/src/storage/file_system/file_system.dart'
-    as c;
+import 'package:flutter_cache_manager/flutter_cache_manager.dart' as c;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -22,7 +21,6 @@ class IOFileSystem implements c.FileSystem {
 
   @override
   Future<File> createFile(String name) async {
-    assert(name != null);
     return (await _fileDir).childFile(name);
   }
 }
@@ -40,10 +38,11 @@ class CustomCacheManager {
     ),
   );
 
-  getSize() async {
+  Future<int> getSize() async {
     try {
-      final directory =
-          await IOFileSystem.createDirectory(CustomCacheManager.key);
+      final directory = await IOFileSystem.createDirectory(
+        CustomCacheManager.key,
+      );
 
       final listStream = directory.list();
       final list = <FileSystemEntity>[];
@@ -51,9 +50,11 @@ class CustomCacheManager {
         list.add(fileSystemEntity);
       }
       final stats = await Future.wait(
-          list.map((fileSystemEntity) => fileSystemEntity.stat()));
-      final fileStats =
-          stats.where((stat) => stat.type == FileSystemEntityType.file);
+        list.map((fileSystemEntity) => fileSystemEntity.stat()),
+      );
+      final fileStats = stats.where(
+        (stat) => stat.type == FileSystemEntityType.file,
+      );
       final sizes = fileStats.map((stat) => stat.size);
       final size = sizes.isEmpty ? 0 : sizes.reduce((v, e) => v + e);
       // print(size);

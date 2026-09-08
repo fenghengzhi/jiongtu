@@ -14,31 +14,33 @@ class _DetailScreen extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: Text(widget.resource.title),
+    appBar: AppBar(title: Text(widget.resource.title)),
+    body: Scrollbar(
+      child: ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        itemCount: _picInfos.length,
+        itemBuilder: (context, i) => _Item(_picInfos[i]),
       ),
-      body: Scrollbar(
-          child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: _picInfos.length,
-              itemBuilder: (context, i) => _Item(_picInfos[i]))));
+    ),
+  );
 
   @override
   void initState() {
     super.initState();
     widget.getItemData(widget.resource).then((picInfos) async {
+      if (!mounted) return;
       setState(() {
         _picInfos = picInfos;
       });
-      final __picInfos = (picInfos as List<PicInfo>);
-      for (var i = 0; i < __picInfos.length; i++) {
-        if (!this.mounted) {
+      for (var i = 0; i < picInfos.length; i++) {
+        if (!mounted) {
           return;
         }
-        while (true) {
+        while (mounted) {
           try {
-            await CustomCacheManager.instance
-                .getSingleFile(__picInfos[i].pic_url);
+            await CustomCacheManager.instance.getSingleFile(
+              picInfos[i].pic_url,
+            );
             break;
           } catch (e) {
             await Future.delayed(Duration(seconds: 1));
@@ -59,40 +61,52 @@ class _Item extends StatelessWidget {
     final width = picInfo.width;
     final height = picInfo.height;
     return TextButton(
-        onPressed: () {
-          // print(picInfo.url);
-          // print(picInfo.mp4_url);
-          // print(picInfo.video_url);
-          if (picInfo.video_url?.isNotEmpty == true) {
-            // print('videoplayer');
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => VideoPlayer(picInfo)));
-          } else {
-            // print('iamgeviewer');
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => ImageViewer(picInfo)));
-          }
-        },
-        child: Column(children: [
+      onPressed: () {
+        // print(picInfo.url);
+        // print(picInfo.mp4_url);
+        // print(picInfo.video_url);
+        if (picInfo.video_url?.isNotEmpty == true) {
+          // print('videoplayer');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => VideoPlayer(picInfo)),
+          );
+        } else {
+          // print('iamgeviewer');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ImageViewer(picInfo)),
+          );
+        }
+      },
+      child: Column(
+        children: [
           // AspectRatio(
           // aspectRatio: picInfo.file_width / picInfo.file_height,
           // child:
           CachedNetworkImage(
-              placeholder: (context, url) => AspectRatio(
-                  aspectRatio:
-                      (width != null && height != null) ? (width / height) : 1,
-                  child: Center(child: CircularProgressIndicator())),
-              errorWidget: (context, url, error) => AspectRatio(
-                  aspectRatio:
-                      (width != null && height != null) ? (width / height) : 1,
-                  child: const Icon(Icons.error)),
-              cacheManager: CustomCacheManager.instance,
-              fit: BoxFit.fitWidth,
-              width: double.infinity,
-              imageUrl: picInfo.pic_url),
+            placeholder: (context, url) => AspectRatio(
+              aspectRatio: (width != null && height != null)
+                  ? (width / height)
+                  : 1,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            errorWidget: (context, url, error) => AspectRatio(
+              aspectRatio: (width != null && height != null)
+                  ? (width / height)
+                  : 1,
+              child: const Icon(Icons.error),
+            ),
+            cacheManager: CustomCacheManager.instance,
+            fit: BoxFit.fitWidth,
+            width: double.infinity,
+            imageUrl: picInfo.pic_url,
+          ),
           // imageUrl: 'https://via.placeholder.com/1000x1000'),
-          Center(child: Text(picInfo.title?.trim() ?? ''))
-        ]));
+          Center(child: Text(picInfo.title?.trim() ?? '')),
+        ],
+      ),
+    );
   }
 }
 

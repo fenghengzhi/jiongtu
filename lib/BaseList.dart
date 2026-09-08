@@ -21,24 +21,29 @@ class _BaseListState extends State<BaseList>
       print(_resources);
     }
     return RefreshIndicator(
-        onRefresh: refresh,
-        child: Scrollbar(
-            child: MasonryGridView.count(
+      onRefresh: refresh,
+      child: Scrollbar(
+        child: MasonryGridView.count(
           physics: BouncingScrollPhysics(),
           crossAxisCount: 2,
           itemCount: _resources.length,
-//        mainAxisSpacing: 4.0,
+          //        mainAxisSpacing: 4.0,
           crossAxisSpacing: 0,
           itemBuilder: (BuildContext context, int index) => _Item(
-              resource: _resources[index], getItemData: widget.getItemData),
+            resource: _resources[index],
+            getItemData: widget.getItemData,
+          ),
           // staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
-        )));
+        ),
+      ),
+    );
   }
 
   @override
   void initState() {
     super.initState();
     widget.getListData().then((resources) {
+      if (!mounted) return;
       setState(() {
         _resources = resources;
       });
@@ -47,6 +52,7 @@ class _BaseListState extends State<BaseList>
 
   Future<void> refresh() async {
     final resources = await widget.getListData();
+    if (!mounted) return;
     setState(() {
       _resources = resources;
     });
@@ -76,12 +82,15 @@ class _Item extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-      onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  DetailScreen(resource: resource, getItemData: getItemData))),
-    child: Column(children: [
+    onPressed: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            DetailScreen(resource: resource, getItemData: getItemData),
+      ),
+    ),
+    child: Column(
+      children: [
         CachedNetworkImage(
           fit: BoxFit.fitWidth,
           imageUrl: resource.coverUrl,
@@ -89,7 +98,8 @@ class _Item extends StatelessWidget {
           placeholder: (context, url) => const CircularProgressIndicator(),
           errorWidget: (context, url, error) => const Icon(Icons.error),
         ),
-        Text(resource.title)
-      ]),
+        Text(resource.title),
+      ],
+    ),
   );
 }

@@ -1,30 +1,85 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:jiongtu/main.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:jiongtu/MyApp.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    // Cache size falls back to zero when no platform directory is available.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (_) async => null,
+        );
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Home tabs render and settings persist the dark theme', (
+    WidgetTester tester,
+  ) async {
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(MyApp());
+        await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+        expect(find.text('游侠囧图'), findsOneWidget);
+        expect(find.text('游民星空'), findsOneWidget);
+        expect(find.text('设置'), findsOneWidget);
+        expect(
+          tester
+              .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
+              .currentIndex,
+          0,
+        );
+
+        await tester.tap(find.text('游民星空'));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
+              .currentIndex,
+          1,
+        );
+
+        await tester.tap(find.text('设置'));
+        await tester.pumpAndSettle();
+        expect(find.text('清除缓存'), findsOneWidget);
+        expect(find.text('暗黑模式'), findsOneWidget);
+
+        await tester.tap(find.byType(Switch));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<MaterialApp>(find.byType(MaterialApp))
+              .theme!
+              .brightness,
+          Brightness.dark,
+        );
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('darkTheme'), isTrue);
+
+        await tester.tap(find.text('清除缓存'));
+        await tester.pumpAndSettle();
+        expect(find.text('确认清除缓存吗？'), findsOneWidget);
+        await tester.tap(find.text('取消'));
+        await tester.pumpAndSettle();
+        expect(find.text('确认清除缓存吗？'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+      () => MockClient((request) async {
+        if (request.url.host == 'api3.ali213.net') {
+          return http.Response('{"data":{"article":[]}}', 200);
+        }
+        if (request.url.host == 'www.gamersky.com') {
+          return http.Response('<html></html>', 200);
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      }),
+    );
   });
 }
