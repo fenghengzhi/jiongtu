@@ -101,6 +101,9 @@ jobs:
           done
           cp android/release-signing-cert.sha256 release/SIGNING_CERT_SHA256
           (cd release && sha256sum ./*.apk > SHA256SUMS)
+          python3 .github/scripts/create-update-manifest.py \
+            --aapt "$ANDROID_HOME/build-tools/36.0.0/aapt" \
+            --tag "android-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
       - name: Save build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -125,6 +128,7 @@ jobs:
           - 32 位 ARM 设备：下载 jiongtu-armeabi-v7a.apk。
           - x86_64 设备或模拟器：下载 jiongtu-x86_64.apk。
           - 最低支持 Android 7.0；SHA256SUMS 用于校验下载文件。
+          - 应用内可在“设置 → 检查更新”中下载并安装后续版本。
 
           本版本使用固定发布签名。安装过固定签名版本后，后续新构建可覆盖升级。
           从此前开发签名版本切换时，仍需先卸载旧版一次（会清除本地数据）。
@@ -140,7 +144,7 @@ jobs:
             latest=true
           fi
 
-          gh release create "$tag" release/*.apk release/SHA256SUMS release/SIGNING_CERT_SHA256 \
+          gh release create "$tag" release/*.apk release/SHA256SUMS release/SIGNING_CERT_SHA256 release/update.json \
             --target "$GITHUB_SHA" \
             --title "Android build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" \
             --notes-file "$notes" \

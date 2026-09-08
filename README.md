@@ -32,6 +32,21 @@ flutter test
 
 静态检查保留项目已有的命名和代码风格提示；错误和警告仍会导致检查失败。
 页面测试使用模拟接口数据，不依赖外部站点，覆盖底部导航、暗黑模式保存和缓存确认弹窗。
+更新测试覆盖版本和架构选择、发布信息异常、下载完整性、取消重试、安装授权拒绝与恢复，以及关闭弹窗后不再触发安装。
+
+## 应用内更新
+
+在“设置 → 检查更新”中手动检查本仓库的最新正式 GitHub Release。页面显示当前版本；发现新版本后，可查看发布说明、下载进度，取消或重试下载，然后交由 Android 系统确认安装。
+
+- 根据当前应用进程的架构选择 ARMv7、ARM64 或 x86_64 APK，保持原安装架构；比较 APK 的实际 `versionCode`，兼容 Flutter 分架构构建的版本号偏移，同版本和旧版本不会提示升级。
+- 下载后验证文件大小和 SHA-256；打开安装器前再次核对 APK 包名、版本、最低系统版本及签名是否与当前应用一致。
+- Android 8.0 及以上首次安装需允许本应用“安装未知应用”；授权返回后继续安装，拒绝授权可稍后重试。安装仍需在系统界面确认。
+- APK 保存在应用私有缓存目录，不需要存储权限；取消或失败会删除未完成文件，超过一天的更新缓存会在后续下载时清理。
+- 发布流程自动从三个实际 APK 提取版本信息并生成 `update.json`，与 APK 一同上传。缺少该文件的历史 Release 会提示暂不支持应用内更新；此功能从包含它的新发布版本起生效。
+
+开发签名与发布签名不同的版本不能覆盖安装；更新程序会给出签名不匹配提示。检查和下载需要设备能访问 GitHub。
+
+实现参考：[GitHub Releases API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)、[Android 安装来源权限](https://developer.android.com/reference/android/content/pm/PackageManager#canRequestPackageInstalls())。
 
 ## Android 打包
 
@@ -51,7 +66,7 @@ Release 构建必须使用固定发布签名；缺少签名配置会直接失败
 2. 安装锁定依赖、生成 MobX 代码，运行静态检查和页面测试。
 3. 使用固定发布密钥构建 ARMv7、ARM64、x86_64 三种 release APK，以工作流运行序号作为构建号。
 4. 验证三个 APK 的签名有效，且证书 SHA-256 均匹配仓库中的 `android/release-signing-cert.sha256`。
-5. 将 APK、`SHA256SUMS` 和 `SIGNING_CERT_SHA256` 上传到 [GitHub Releases](https://github.com/fenghengzhi/jiongtu/releases)，并在 Actions 中保留 14 天的构建附件。
+5. 从 APK 生成 `update.json`（每种架构的实际版本号、最低系统版本、文件大小和 SHA-256），将其与 APK、`SHA256SUMS` 和 `SIGNING_CERT_SHA256` 上传到 [GitHub Releases](https://github.com/fenghengzhi/jiongtu/releases)，并在 Actions 中保留 14 天的构建附件。
 
 标签格式为 `android-<run_id>-<run_attempt>`，指向实际构建的提交；重跑使用新标签，保留上一次的发布产物。也可在 Actions 页面选择 `master` 手动运行。
 发布使用工作流自带的 `GITHUB_TOKEN`，无需额外配置个人访问令牌。

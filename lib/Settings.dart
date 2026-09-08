@@ -6,6 +6,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'CustomCacheManager.dart';
 import 'MyApp.dart';
 import 'MyHomePage.dart';
+import 'app_update_tile.dart';
 
 class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
   @override
@@ -35,6 +36,8 @@ class _Settings extends State<Settings> with AutomaticKeepAliveClientMixin {
               ),
             ),
           ),
+          const Divider(),
+          const AppUpdateTile(),
           const Divider(),
         ],
       ),
