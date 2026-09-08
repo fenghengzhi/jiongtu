@@ -70,36 +70,40 @@ class _ViewerState extends State<_Viewer> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      child: OverflowBox(
-        maxWidth: double.infinity,
-        maxHeight: double.infinity,
-        alignment: Alignment.center,
-        child: Container(
-          width: width,
-          height: height,
-          transform: Matrix4.identity()
-            ..translateByDouble(
-              (1 - _scale) * _origin.dx + _offsetX,
-              (1 - _scale) * _origin.dy + _offsetY,
-              0,
-              1,
-            )
-            ..scaleByDouble(_scale, _scale, _scale, 1),
-          child: GestureDetector(
-            // onDoubleTap: _doubleTapHandler,
-            onScaleUpdate: scaleUpdateHandler,
-            onScaleStart: _scaleStartHandler,
-            onLongPressStart: _saveToGallery,
-            child: CachedNetworkImage(
-              key: _key,
-              fit: BoxFit.fitWidth,
-              cacheManager: CustomCacheManager.instance,
-              errorWidget: (context, url, error) => Icon(Icons.error),
-              //                            width: double.infinity,
-              //                            height: double.infinity,
-              imageUrl: widget._picInfo.pic_url,
+    // Keep the gesture target fixed to the viewport as the image transforms.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onScaleUpdate: scaleUpdateHandler,
+      onScaleStart: _scaleStartHandler,
+      child: Container(
+        color: Colors.black,
+        child: OverflowBox(
+          maxWidth: double.infinity,
+          maxHeight: double.infinity,
+          alignment: Alignment.center,
+          child: Container(
+            width: width,
+            height: height,
+            transform: Matrix4.identity()
+              ..translateByDouble(
+                (1 - _scale) * _origin.dx + _offsetX,
+                (1 - _scale) * _origin.dy + _offsetY,
+                0,
+                1,
+              )
+              ..scaleByDouble(_scale, _scale, _scale, 1),
+            child: GestureDetector(
+              // onDoubleTap: _doubleTapHandler,
+              onLongPressStart: _saveToGallery,
+              child: CachedNetworkImage(
+                key: _key,
+                fit: BoxFit.fitWidth,
+                cacheManager: CustomCacheManager.instance,
+                errorWidget: (context, url, error) => Icon(Icons.error),
+                //                            width: double.infinity,
+                //                            height: double.infinity,
+                imageUrl: widget._picInfo.pic_url,
+              ),
             ),
           ),
         ),
