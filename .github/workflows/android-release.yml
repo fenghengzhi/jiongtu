@@ -1,0 +1,114 @@
+name: Android Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-release:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out the triggering commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle
+            android/gradle.properties
+            android/gradle/wrapper/gradle-wrapper.properties
+            pubspec.lock
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 ndk;28.2.13676358 cmake;3.22.1'
+
+      - name: Set up Flutter from .fvmrc
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Install locked dependencies and generate code
+        run: |
+          flutter pub get --enforce-lockfile
+          dart run build_runner build
+
+      - name: Analyze and test
+        run: |
+          flutter analyze --no-fatal-infos
+          flutter test
+
+      - name: Build release APKs
+        run: |
+          flutter build apk --release --split-per-abi \
+            --target-platform android-arm,android-arm64,android-x64 \
+            --build-number "$GITHUB_RUN_NUMBER"
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          for abi in armeabi-v7a arm64-v8a x86_64; do
+            cp "build/app/outputs/flutter-apk/app-${abi}-release.apk" "release/jiongtu-${abi}.apk"
+          done
+          (cd release && sha256sum ./*.apk > SHA256SUMS)
+
+      - name: Save build artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-apks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag="android-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          notes="$RUNNER_TEMP/android-release-notes.md"
+          cat > "$notes" <<EOF
+          自动构建自 master 提交 ${GITHUB_SHA}。
+
+          - ARM64 手机：下载 jiongtu-arm64-v8a.apk。
+          - 32 位 ARM 设备：下载 jiongtu-armeabi-v7a.apk。
+          - x86_64 设备或模拟器：下载 jiongtu-x86_64.apk。
+          - 最低支持 Android 7.0；SHA256SUMS 用于校验下载文件。
+
+          当前沿用项目的开发签名。不同 CI 运行的签名密钥不同，不能直接覆盖安装上一版。
+          如需安装新包，需先卸载旧版（会清除本地数据）；持续覆盖升级需要配置固定发布签名。
+
+          [构建记录](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+          EOF
+
+          # Avoid marking a build that is already behind master as latest.
+          latest=false
+          master_sha=$(gh api "repos/$GH_REPO/git/ref/heads/master" --jq '.object.sha')
+          if [[ "$master_sha" == "$GITHUB_SHA" ]]; then
+            latest=true
+          fi
+
+          gh release create "$tag" release/*.apk release/SHA256SUMS \
+            --target "$GITHUB_SHA" \
+            --title "Android build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" \
+            --notes-file "$notes" \
+            --latest="$latest"
