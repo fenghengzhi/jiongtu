@@ -4,6 +4,11 @@
 *.pyc
 *.swp
 .DS_Store
+# Android signing credentials stay outside version control.
+*.jks
+*.keystore
+*.p12
+**/key.properties
 .atom/
 .buildlog/
 .history

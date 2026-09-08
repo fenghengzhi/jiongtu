@@ -40,7 +40,8 @@ flutter build apk --release --target-platform android-arm64 --split-per-abi
 ```
 
 产物位于 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`。
-当前沿用开发签名，正式发布前需配置发布密钥。
+Release 构建必须使用固定发布签名；缺少签名配置会直接失败，不会回退到开发签名。
+本地可通过未提交的 `android/key.properties` 提供 `storeFile`（绝对路径）、`storePassword`、`keyAlias`、`keyPassword`，也可使用下文对应的环境变量。Debug 构建不受影响。
 
 ## GitHub 自动发布
 
@@ -48,14 +49,31 @@ flutter build apk --release --target-platform android-arm64 --split-per-abi
 
 1. 从 `.fvmrc` 安装 Flutter，准备 Java 17 和 Android 构建工具。
 2. 安装锁定依赖、生成 MobX 代码，运行静态检查和页面测试。
-3. 构建 ARMv7、ARM64、x86_64 三种 release APK，以工作流运行序号作为构建号。
-4. 将 APK 和 `SHA256SUMS` 上传到 [GitHub Releases](https://github.com/fenghengzhi/jiongtu/releases)，并在 Actions 中保留 14 天的构建附件。
+3. 使用固定发布密钥构建 ARMv7、ARM64、x86_64 三种 release APK，以工作流运行序号作为构建号。
+4. 验证三个 APK 的签名有效，且证书 SHA-256 均匹配仓库中的 `android/release-signing-cert.sha256`。
+5. 将 APK、`SHA256SUMS` 和 `SIGNING_CERT_SHA256` 上传到 [GitHub Releases](https://github.com/fenghengzhi/jiongtu/releases)，并在 Actions 中保留 14 天的构建附件。
 
 标签格式为 `android-<run_id>-<run_attempt>`，指向实际构建的提交；重跑使用新标签，保留上一次的发布产物。也可在 Actions 页面选择 `master` 手动运行。
 发布使用工作流自带的 `GITHUB_TOKEN`，无需额外配置个人访问令牌。
 
-当前 CI 沿用开发签名，临时构建环境每次生成的密钥不同，因此不同运行的 APK 不能直接覆盖安装。
-需要先卸载旧版才能安装新包，卸载会清除本地数据。要支持持续覆盖升级，需另行配置固定发布签名。
+### 固定发布签名
+
+仓库 Actions Secrets 使用以下配置（已配置在当前仓库）：
+
+| Secret | 内容 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | 固定发布 keystore 的 Base64 内容 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | 发布密钥别名 |
+| `ANDROID_KEY_PASSWORD` | 发布密钥密码 |
+
+工作流只在签名步骤中将 keystore 还原到临时目录，并在退出时删除；不缓存或上传私钥。
+本地使用环境变量时，将 keystore 路径设置为 `ANDROID_KEYSTORE_PATH`，其余三个变量名与 Secrets 一致。
+私钥和密码需另存一份安全备份；不要提交 keystore 或 `key.properties`，也不要为新版本重新生成密钥。
+
+使用固定签名后，同一架构的后续新构建可覆盖升级并保留应用数据。
+从此前随机开发签名版本切换时，仍需先卸载旧版一次（会清除本地数据）。
+重跑历史任务不会增加构建号；需要更新版本时，应运行最新 `master` 的新工作流。
 
 ## 本次升级
 

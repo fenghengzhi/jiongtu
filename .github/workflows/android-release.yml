@@ -56,11 +56,42 @@ jobs:
           flutter analyze --no-fatal-infos
           flutter test
 
-      - name: Build release APKs
+      - name: Build APKs with the fixed release key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/jiongtu-release.p12
         run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required signing secret: $name"
+              exit 1
+            fi
+          done
+          umask 077
+          trap 'rm -f "$ANDROID_KEYSTORE_PATH"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          unset ANDROID_KEYSTORE_BASE64
           flutter build apk --release --split-per-abi \
             --target-platform android-arm,android-arm64,android-x64 \
             --build-number "$GITHUB_RUN_NUMBER"
+
+      - name: Remove temporary signing key
+        if: always()
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/jiongtu-release.p12
+        run: rm -f "$ANDROID_KEYSTORE_PATH"
+
+      - name: Verify APK signing certificates
+        run: |
+          export APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          bash .github/scripts/verify-apk-signatures.sh android/release-signing-cert.sha256 \
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
 
       - name: Prepare release assets
         run: |
@@ -68,6 +99,7 @@ jobs:
           for abi in armeabi-v7a arm64-v8a x86_64; do
             cp "build/app/outputs/flutter-apk/app-${abi}-release.apk" "release/jiongtu-${abi}.apk"
           done
+          cp android/release-signing-cert.sha256 release/SIGNING_CERT_SHA256
           (cd release && sha256sum ./*.apk > SHA256SUMS)
 
       - name: Save build artifacts
@@ -94,8 +126,9 @@ jobs:
           - x86_64 设备或模拟器：下载 jiongtu-x86_64.apk。
           - 最低支持 Android 7.0；SHA256SUMS 用于校验下载文件。
 
-          当前沿用项目的开发签名。不同 CI 运行的签名密钥不同，不能直接覆盖安装上一版。
-          如需安装新包，需先卸载旧版（会清除本地数据）；持续覆盖升级需要配置固定发布签名。
+          本版本使用固定发布签名。安装过固定签名版本后，后续新构建可覆盖升级。
+          从此前开发签名版本切换时，仍需先卸载旧版一次（会清除本地数据）。
+          SIGNING_CERT_SHA256 记录签名证书指纹，每次发布前都会校验所有 APK。
 
           [构建记录](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
           EOF
@@ -107,7 +140,7 @@ jobs:
             latest=true
           fi
 
-          gh release create "$tag" release/*.apk release/SHA256SUMS \
+          gh release create "$tag" release/*.apk release/SHA256SUMS release/SIGNING_CERT_SHA256 \
             --target "$GITHUB_SHA" \
             --title "Android build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}" \
             --notes-file "$notes" \

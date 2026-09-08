@@ -3,6 +3,20 @@ plugins {
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
+def signingProperties = new Properties()
+def signingPropertiesFile = rootProject.file('key.properties')
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.withInputStream { signingProperties.load(it) }
+}
+
+def releaseSigning = [
+    storeFile: System.getenv('ANDROID_KEYSTORE_PATH') ?: signingProperties.getProperty('storeFile'),
+    storePassword: System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: signingProperties.getProperty('storePassword'),
+    keyAlias: System.getenv('ANDROID_KEY_ALIAS') ?: signingProperties.getProperty('keyAlias'),
+    keyPassword: System.getenv('ANDROID_KEY_PASSWORD') ?: signingProperties.getProperty('keyPassword'),
+]
+def hasReleaseSigning = releaseSigning.values().every { it != null && !it.trim().isEmpty() }
+
 android {
     namespace = 'com.example.jiongtu'
     compileSdk = flutter.compileSdkVersion
@@ -21,12 +35,36 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
+    signingConfigs {
         release {
-            // Configure a release keystore before publishing the app.
-            signingConfig = signingConfigs.debug
+            if (hasReleaseSigning) {
+                storeFile = file(releaseSigning.storeFile)
+                storePassword = releaseSigning.storePassword
+                keyAlias = releaseSigning.keyAlias
+                keyPassword = releaseSigning.keyPassword
+            }
         }
     }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.release
+        }
+    }
+}
+
+def validateReleaseSigning = tasks.register('validateReleaseSigning') {
+    doLast {
+        if (!hasReleaseSigning) {
+            throw new GradleException('Release signing is required. Configure ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD, or android/key.properties.')
+        }
+        if (!file(releaseSigning.storeFile).isFile()) {
+            throw new GradleException('Release keystore file does not exist.')
+        }
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+    dependsOn(validateReleaseSigning)
 }
 
 kotlin {
